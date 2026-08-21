@@ -122,24 +122,29 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 .search svg{width:14px;height:14px;color:var(--muted);flex-shrink:0}
 .search input{background:none;border:none;outline:none;color:var(--text);width:100%;font-size:13px}
 
-/* 下拉按鈕（類型／標籤，點擊展開選單，箭頭翻轉） */
+/* 下拉按鈕（語系／標籤，點擊向下展開橫列視窗，箭頭翻轉） */
 .dropdown{position:relative}
 .dd-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
   background:var(--card);color:var(--muted);font-size:13px;transition:.15s}
 .dd-btn:hover{color:var(--text)}
 .dd-btn.open{background:var(--card-hi);color:var(--text)}
+.dd-btn.active{color:var(--accent)}
+.dd-btn.active .lbl{font-weight:600}
 .dd-btn svg{width:14px;height:14px;transition:transform .2s}
 .dd-btn.open svg{transform:rotate(180deg)}
-.dd-btn .cur{color:var(--accent);font-weight:600}
-.dd-menu{position:absolute;top:calc(100% + 8px);left:0;min-width:160px;max-height:300px;overflow:auto;
-  background:var(--panel);border-radius:10px;padding:6px;box-shadow:0 16px 40px rgba(0,0,0,.5);
-  opacity:0;transform:translateY(-6px);pointer-events:none;transition:.18s;z-index:40}
-.dd-menu.show{opacity:1;transform:none;pointer-events:auto}
-.dd-item{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:6px;
-  font-size:13px;color:var(--text);transition:.15s}
-.dd-item:hover{background:var(--card)}
-.dd-item.active{color:var(--accent);font-weight:600}
-.dd-item .n{opacity:.6;margin-left:4px;font-size:11px}
+
+/* 向下展開的橫列視窗：chips 水平排列、自動換行，無垂直卷軸 */
+.dd-panel{position:absolute;top:calc(100% + 8px);left:0;z-index:40;
+  background:var(--panel);border-radius:10px;padding:10px;
+  box-shadow:0 16px 40px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:.18s}
+.dd-panel.show{opacity:1;transform:none;pointer-events:auto}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;max-width:460px}
+.chip{padding:5px 14px;border-radius:20px;background:var(--card);color:var(--muted);
+  font-size:12px;transition:.15s;white-space:nowrap}
+.chip:hover{color:var(--text);background:var(--card-hi)}
+.chip.active{background:var(--accent);color:#fff}
+.chip .n{opacity:.65;margin-left:4px}
 
 /* 排序按鈕：精選／最新／熱門（單選） */
 .sort-btns{display:flex;gap:6px}
@@ -397,23 +402,27 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
       <!-- 篩選展區 -->
       <section class="exhibition">
 
-        <!-- 篩選列：類型下拉＋標籤下拉＋精選/最新/熱門按鈕（決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
+        <!-- 篩選列：語系下拉＋標籤下拉＋精選/最新/熱門按鈕（決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
         <div class="filter-bar">
-          <!-- 類型下拉 -->
+          <!-- 語系下拉（單選，向下展開橫列） -->
           <div class="dropdown">
-            <button class="dd-btn" id="typeBtn" aria-haspopup="true" aria-expanded="false">
-              類型<span class="cur" id="curType"></span>
+            <button class="dd-btn" id="langBtn" aria-haspopup="true" aria-expanded="false">
+              <span class="lbl" id="langLabel">語系</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
-            <div class="dd-menu" id="typeMenu"></div>
+            <div class="dd-panel" id="langPanel">
+              <div class="chip-row" id="langRow"></div>
+            </div>
           </div>
-          <!-- 標籤下拉 -->
+          <!-- 標籤下拉（複選，向下展開橫列） -->
           <div class="dropdown">
             <button class="dd-btn" id="tagBtn" aria-haspopup="true" aria-expanded="false">
-              標籤<span class="cur" id="curTag"></span>
+              <span class="lbl" id="tagLabel">標籤</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
-            <div class="dd-menu" id="tagMenu"></div>
+            <div class="dd-panel" id="tagPanel">
+              <div class="chip-row" id="tagRow"></div>
+            </div>
           </div>
           <!-- 排序按鈕：精選／最新／熱門（單選） -->
           <div class="sort-btns" id="sortBtns">
@@ -492,23 +501,23 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 <script>
 /* ================= 佔位資料：作品清單 ================= */
 const WORKS=[
-  {id:1, title:'星塵劍客',       author:'作者甲', status:'連載中', rating:8.7, follows:15234, added:0,  hue:262, type:'奇幻', tags:['奇幻','冒險'], desc:'背負星屑之劍的少年，踏上尋找失落星座的旅程。'},
-  {id:2, title:'深夜食堂物語',   author:'作者乙', status:'已完結', rating:9.1, follows:22108, added:2,  hue:25,  type:'日常', tags:['日常','治癒'], desc:'只在午夜營業的小店，用一道菜接住每個疲憊的靈魂。'},
-  {id:3, title:'代號：青鳥',     author:'作者丙', status:'連載中', rating:8.2, follows:9870,  added:1,  hue:200, type:'科幻', tags:['科幻','懸疑'], desc:'記憶可以被交易的城市裡，一名信使追查自己的過去。'},
-  {id:4, title:'櫻色約定',       author:'作者丁', status:'連載中', rating:7.9, follows:7650,  added:3,  hue:330, type:'戀愛', tags:['戀愛','校園'], desc:'畢業前的最後一個春天，兩人許下十年後再見的約定。'},
-  {id:5, title:'鋼鐵叢林',       author:'作者戊', status:'休載中', rating:8.9, follows:18900, added:5,  hue:150, type:'科幻', tags:['科幻','熱血'], desc:'巨構都市的最底層，少年駕駛回收機甲向上攀登。'},
-  {id:6, title:'霧中偵探社',     author:'作者己', status:'連載中', rating:8.4, follows:12300, added:4,  hue:220, type:'懸疑', tags:['懸疑','歷史'], desc:'濃霧籠罩的港都，三人偵探社接下不存在的委託。'},
-  {id:7, title:'山神與便利商店', author:'作者甲', status:'連載中', rating:8.0, follows:6400,  added:6,  hue:120, type:'日常', tags:['日常','奇幻'], desc:'沒落山神在人間打工，店裡的關東煮意外受歡迎。'},
-  {id:8, title:'第七競技場',     author:'作者庚', status:'連載中', rating:7.6, follows:5400,  added:7,  hue:0,   type:'熱血', tags:['熱血','冒險'], desc:'敗者失去名字的死鬥擂台，無名選手挑戰七層之巔。'},
-  {id:9, title:'圖書館的貓',     author:'作者乙', status:'已完結', rating:9.3, follows:25600, added:9,  hue:45,  type:'日常', tags:['治癒','日常'], desc:'會說話的貓館長，為每本找不到讀者的書尋找歸宿。'},
-  {id:10,title:'邊境商隊',       author:'作者辛', status:'連載中', rating:8.1, follows:8900,  added:8,  hue:180, type:'冒險', tags:['冒險','歷史'], desc:'沿著古代商路旅行的隊伍，販賣貨物也販賣故事。'},
-  {id:11,title:'量子戀人',       author:'作者丙', status:'連載中', rating:7.8, follows:7100,  added:10, hue:290, type:'戀愛', tags:['戀愛','科幻'], desc:'平行世界的兩人共享同一個夢，卻只有一人記得。'},
-  {id:12,title:'怪談研究會',     author:'作者壬', status:'連載中', rating:8.5, follows:11200, added:11, hue:250, type:'懸疑', tags:['懸疑','校園'], desc:'放學後的舊校舍，社團記錄著一一應驗的校園怪談。'}
+  {id:1, title:'星塵劍客',       author:'作者甲', status:'連載中', rating:8.7, follows:15234, added:0,  hue:262, lang:'中文', tags:['奇幻','冒險'], desc:'背負星屑之劍的少年，踏上尋找失落星座的旅程。'},
+  {id:2, title:'深夜食堂物語',   author:'作者乙', status:'已完結', rating:9.1, follows:22108, added:2,  hue:25,  lang:'日文', tags:['日常','治癒'], desc:'只在午夜營業的小店，用一道菜接住每個疲憊的靈魂。'},
+  {id:3, title:'代號：青鳥',     author:'作者丙', status:'連載中', rating:8.2, follows:9870,  added:1,  hue:200, lang:'英文', tags:['科幻','懸疑'], desc:'記憶可以被交易的城市裡，一名信使追查自己的過去。'},
+  {id:4, title:'櫻色約定',       author:'作者丁', status:'連載中', rating:7.9, follows:7650,  added:3,  hue:330, lang:'日文', tags:['戀愛','校園'], desc:'畢業前的最後一個春天，兩人許下十年後再見的約定。'},
+  {id:5, title:'鋼鐵叢林',       author:'作者戊', status:'休載中', rating:8.9, follows:18900, added:5,  hue:150, lang:'英文', tags:['科幻','熱血'], desc:'巨構都市的最底層，少年駕駛回收機甲向上攀登。'},
+  {id:6, title:'霧中偵探社',     author:'作者己', status:'連載中', rating:8.4, follows:12300, added:4,  hue:220, lang:'英文', tags:['懸疑','歷史'], desc:'濃霧籠罩的港都，三人偵探社接下不存在的委託。'},
+  {id:7, title:'山神與便利商店', author:'作者甲', status:'連載中', rating:8.0, follows:6400,  added:6,  hue:120, lang:'日文', tags:['日常','奇幻'], desc:'沒落山神在人間打工，店裡的關東煮意外受歡迎。'},
+  {id:8, title:'第七競技場',     author:'作者庚', status:'連載中', rating:7.6, follows:5400,  added:7,  hue:0,   lang:'韓文', tags:['熱血','冒險'], desc:'敗者失去名字的死鬥擂台，無名選手挑戰七層之巔。'},
+  {id:9, title:'圖書館的貓',     author:'作者乙', status:'已完結', rating:9.3, follows:25600, added:9,  hue:45,  lang:'日文', tags:['治癒','日常'], desc:'會說話的貓館長，為每本找不到讀者的書尋找歸宿。'},
+  {id:10,title:'邊境商隊',       author:'作者辛', status:'連載中', rating:8.1, follows:8900,  added:8,  hue:180, lang:'中文', tags:['冒險','歷史'], desc:'沿著古代商路旅行的隊伍，販賣貨物也販賣故事。'},
+  {id:11,title:'量子戀人',       author:'作者丙', status:'連載中', rating:7.8, follows:7100,  added:10, hue:290, lang:'韓文', tags:['戀愛','科幻'], desc:'平行世界的兩人共享同一個夢，卻只有一人記得。'},
+  {id:12,title:'怪談研究會',     author:'作者壬', status:'連載中', rating:8.5, follows:11200, added:11, hue:250, lang:'日文', tags:['懸疑','校園'], desc:'放學後的舊校舍，社團記錄著一一應驗的校園怪談。'}
 ];
 
-/* ================= 全域狀態（檢視密度／排序／類型／標籤／關鍵字／頁碼） ================= */
+/* ================= 全域狀態（檢視密度／排序／語系／標籤／關鍵字／頁碼） ================= */
 const PAGE_SIZE=8; // 每頁作品數（分頁取代捲動）
-const state={ view:'list', sort:'latest', type:'全部', tag:'全部', query:'', page:1 };
+const state={ view:'list', sort:'latest', lang:'全部', tags:[], query:'', page:1 };
 
 const $=id=>document.getElementById(id);
 const fmt=n=>n.toLocaleString();
@@ -520,33 +529,36 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
 }
 
-/* ================= 渲染：類型／標籤下拉選單（依資料統計數量） ================= */
+/* ================= 渲染：語系／標籤篩選（依資料統計數量，輸出橫列 chips） ================= */
 function tagCounts(){
   const map={};
   WORKS.forEach(w=>w.tags.forEach(t=>map[t]=(map[t]||0)+1));
   return Object.entries(map).sort((a,b)=>b[1]-a[1]); // 依作品數排序
 }
-function typeCounts(){
+function langCounts(){
   const map={};
-  WORKS.forEach(w=>map[w.type]=(map[w.type]||0)+1);
-  return Object.entries(map).sort((a,b)=>b[1]-a[1]); // 依作品數排序
+  WORKS.forEach(w=>map[w.lang]=(map[w.lang]||0)+1);
+  return Object.entries(map);
 }
-function renderMenus(){
-  const types=[['全部',WORKS.length],...typeCounts()];
-  $('typeMenu').innerHTML = types.map(([t,n])=>
-    `<button class="dd-item ${state.type===t?'active':''}" data-type="${t}">${t}<span class="n">${n}</span></button>`).join('');
-  const tags=[['全部',WORKS.length],...tagCounts()];
-  $('tagMenu').innerHTML = tags.map(([t,n])=>
-    `<button class="dd-item ${state.tag===t?'active':''}" data-tag="${t}">${t}<span class="n">${n}</span></button>`).join('');
-  $('curType').textContent = state.type==='全部' ? '' : '· '+state.type;
-  $('curTag').textContent  = state.tag ==='全部' ? '' : '· '+state.tag;
+function renderFilters(){
+  const langs=[['全部',WORKS.length],...langCounts()];
+  $('langRow').innerHTML = langs.map(([l,n])=>
+    `<button class="chip ${state.lang===l?'active':''}" data-lang="${l}">${l}<span class="n">${n}</span></button>`).join('');
+  $('tagRow').innerHTML = tagCounts().map(([t,n])=>
+    `<button class="chip ${state.tags.includes(t)?'active':''}" data-tag="${t}">${t}<span class="n">${n}</span></button>`).join('');
+  // 按鈕標籤：語系選中顯示其值，標籤選中顯示數量
+  $('langLabel').textContent = state.lang==='全部' ? '語系' : state.lang;
+  $('tagLabel').textContent  = state.tags.length ? `標籤(${state.tags.length})` : '標籤';
+  // 按鈕反饋：有選中時以強調色標記
+  $('langBtn').classList.toggle('active', state.lang!=='全部');
+  $('tagBtn').classList.toggle('active',  state.tags.length>0);
 }
 
 /* ================= 渲染：作品清單（篩選→排序→分頁→依密度輸出） ================= */
 function getFiltered(){
   const list = WORKS.filter(w=>
-    (state.type==='全部' || w.type===state.type) &&
-    (state.tag==='全部' || w.tags.includes(state.tag)) &&
+    (state.lang==='全部' || w.lang===state.lang) &&
+    (state.tags.length===0 || state.tags.some(t=>w.tags.includes(t))) &&
     (w.title.includes(state.query) || w.author.includes(state.query)));
   const sorters={
     latest:(a,b)=>a.added-b.added,        // 最新
@@ -578,7 +590,7 @@ function renderWorks(){
   const slice=list.slice((state.page-1)*PAGE_SIZE, state.page*PAGE_SIZE);
   $('works').innerHTML = slice.length
     ? slice.map(workCard).join('')
-    : `<div class="empty">找不到符合的作品，換個關鍵字或標籤試試。</div>`;
+    : `<div class="empty">找不到符合的作品，換個關鍵字、語系或標籤試試。</div>`;
   renderPagination(pages);
 }
 
@@ -619,40 +631,45 @@ $('sortBtns').addEventListener('click',e=>{
 });
 $('searchInput').addEventListener('input',e=>{ state.query=e.target.value.trim(); state.page=1; renderWorks(); });
 
-/* ================= 互動：類型／標籤下拉選單（開關＋外部點擊關閉＋選取套用） ================= */
-function setType(type){
-  state.type=type; state.page=1; renderMenus(); renderWorks();
-  if(type!=='全部') toast(`已篩選類型「${type}」`);
+/* ================= 互動：語系（單選）／標籤（複選）篩選視窗 ================= */
+function setLang(lang){
+  state.lang=lang; state.page=1; renderFilters(); renderWorks();
+  if(lang!=='全部') toast(`已篩選語系「${lang}」`);
 }
-function setTag(tag){
-  state.tag=tag; state.page=1; renderMenus(); renderWorks();
-  if(tag!=='全部') toast(`已篩選標籤「${tag}」`);
+function toggleTag(tag){
+  const i=state.tags.indexOf(tag);
+  if(i>=0) state.tags.splice(i,1); else state.tags.push(tag);
+  state.page=1; renderFilters(); renderWorks();
 }
-function bindDropdown(btnId, menuId, onPick){
-  const btn=$(btnId), menu=$(menuId);
-  btn.addEventListener('click',()=>{
-    const open=menu.classList.toggle('show');
-    btn.classList.toggle('open', open);
-    btn.setAttribute('aria-expanded', open);
-  });
-  menu.addEventListener('click',e=>{
-    const item=e.target.closest('.dd-item'); if(!item) return;
-    onPick(item.dataset.type || item.dataset.tag);
-    menu.classList.remove('show'); btn.classList.remove('open');
-    btn.setAttribute('aria-expanded','false');
-  });
+function openPanel(btn, panel, open){
+  panel.classList.toggle('show', open);
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open);
 }
+$('langBtn').addEventListener('click',()=>{
+  const open=$('langPanel').classList.contains('show');
+  openPanel($('langBtn'), $('langPanel'), !open);
+});
+$('langRow').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip'); if(!chip) return;
+  setLang(chip.dataset.lang);
+  openPanel($('langBtn'), $('langPanel'), false); // 單選：選完即收合
+});
+$('tagBtn').addEventListener('click',()=>{
+  const open=$('tagPanel').classList.contains('show');
+  openPanel($('tagBtn'), $('tagPanel'), !open);
+});
+$('tagRow').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip'); if(!chip) return;
+  toggleTag(chip.dataset.tag); // 複選：維持展開，可連續勾選
+});
 document.addEventListener('click',e=>{
   document.querySelectorAll('.dropdown').forEach(d=>{
     if(!d.contains(e.target)){
-      d.querySelector('.dd-menu').classList.remove('show');
-      d.querySelector('.dd-btn').classList.remove('open');
-      d.querySelector('.dd-btn').setAttribute('aria-expanded','false');
+      openPanel(d.querySelector('.dd-btn'), d.querySelector('.dd-panel'), false);
     }
   });
 });
-bindDropdown('typeBtn','typeMenu', setType);
-bindDropdown('tagBtn','tagMenu', setTag);
 
 /* ================= 互動：全域導航（桌面左欄＋行動底列＋彈層，三方同步選取狀態） ================= */
 function setActivePage(page){
@@ -714,7 +731,7 @@ document.addEventListener('click',e=>{
 });
 
 /* ================= 初始化渲染 ================= */
-renderMenus(); renderWorks();
+renderFilters(); renderWorks();
 </script>
 </body>
 </html>
