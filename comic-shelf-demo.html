@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>漫閱 ComicShelf — UI/UX 示範框架</title>
+<style>
+/* ========== 全域變數與基礎重置 ========== */
+/* 設計語言：無框線設計——層次靠「背景色階＋間距」區分，分隔線僅在重疊處以髮絲線最低限度使用 */
+:root{
+  --bg:#0e1320;        /* 最底層（側欄與展區共用此背景，導覽如懸浮按鈕） */
+  --panel:#141b2c;     /* 第二層：頂列、篩選列、彈層 */
+  --card:#1c2538;      /* 第三層：卡片、控制項 */
+  --card-hi:#232f47;   /* 互動態亮階 */
+  --line:rgba(255,255,255,.07); /* 髮絲分隔線（僅重疊處使用） */
+  --text:#e8ecf4; --muted:#8b94a7; --accent:#ff6b4a; --accent2:#ffb14a;
+
+  /* —— 版面寬度數學：左欄 214px（固定）＋內容柱上限 1127px ＝ 全版心 1341px，整體置中 —— */
+  --sidebar-w:214px;
+  --content-max:1127px;   /* 內容柱最大寬（含左右內距）；想改成「含側欄共 1127」只要改成 913px */
+  --gutter:32px;          /* 內容柱左右內距 → 實際閱讀寬 1127−32×2＝1063px */
+
+  /* —— 間距系統（8 的倍數為基準的呼吸刻度） —— */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:24px; --sp-6:32px; --sp-7:56px; /* 區塊級大間距 */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);display:flex;justify-content:center;min-height:100vh;
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+svg{display:block}
+
+/* ========== 全版心：側欄＋內容作為一個整體置中（側欄不貼瀏覽器左緣） ========== */
+.layout{display:flex;width:100%;max-width:calc(var(--sidebar-w) + var(--content-max))}
+
+/* ========== 極細線條卷軸：軌道是一條細線，拇指只是線上「較粗的一段」 ========== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:linear-gradient(to right,transparent 2.5px,rgba(255,255,255,.10) 2.5px,rgba(255,255,255,.10) 3.5px,transparent 3.5px)}
+::-webkit-scrollbar-thumb{background:#3a4763;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
+/* 橫向捲動區與側欄：完全隱藏卷軸，改用箭頭／分頁控制 */
+.hero-scroll,.nav{scrollbar-width:none}
+.hero-scroll::-webkit-scrollbar,.nav::-webkit-scrollbar{display:none}
+
+/* ========== 左側導覽：214px 固定、無獨立底色（與展區同背景），按鈕如懸浮在展區左側 ========== */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;
+  height:100vh;position:sticky;top:0;display:flex;flex-direction:column;z-index:50}
+/* 品牌區：LOGO 在上、網站標題在下；頂部刻意多留 24px，讓 LOGO 略低於展區最高點，形成視覺落差 */
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:48px 18px 20px}
+.logo{width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+.brand h1{font-size:17px}
+.brand small{display:block;color:var(--muted);font-size:11px;font-weight:400;margin-top:2px}
+.nav{padding:8px 10px;flex:1;overflow-y:auto}
+.nav-group-title{font-size:11px;color:var(--muted);letter-spacing:2px;padding:16px 12px 8px}
+.nav-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:10px 12px;border-radius:8px;color:var(--muted);font-size:14px;transition:.15s}
+.nav-item+.nav-item{margin-top:2px} /* 懸浮按鈕之間的呼吸縫隙 */
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.nav-item:hover{background:var(--card);color:var(--text)} /* 懸浮感：互動時才浮出色塊 */
+.nav-item.active{background:var(--accent);color:#fff}
+.sidebar-foot{padding:16px 18px;color:var(--muted);font-size:11px}
+
+/* ========== 右側主內容區：內容柱最大 1127px（Canvas 層） ========== */
+.main{flex:1;min-width:0}
+.wrap{width:100%;padding:24px var(--gutter) 60px}
+
+/* ========== 內容區頂部列：頁面標題＋全站搜尋（右上）＋會員入口（最右） ========== */
+/* 常駐列因與內容重疊，保留一條髮絲線作最低限度分隔 */
+.page-head{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;
+  margin:-24px calc(var(--gutter)*-1) 24px;padding:12px var(--gutter);
+  background:rgba(14,19,32,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.page-title{font-size:16px;font-weight:600;white-space:nowrap}
+.head-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.head-search{width:min(320px,38vw);flex:none}
+
+/* ========== 會員頭像按鈕與下拉選單（身份＋會員管理，無框、以陰影浮起） ========== */
+.member{position:relative}
+.avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--card);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.avatar-btn svg{width:18px;height:18px}
+.avatar-btn:hover,.avatar-btn.open{color:var(--accent);background:var(--card-hi)}
+.member-menu{position:absolute;right:0;top:calc(100% + 10px);width:250px;
+  background:var(--panel);border-radius:var(--radius);
+  padding:12px;box-shadow:0 16px 40px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:.18s}
+.member-menu.show{opacity:1;transform:none;pointer-events:auto}
+.member-card{display:flex;gap:12px;align-items:center;padding:6px 6px 12px;
+  border-bottom:1px solid var(--line)} /* 選單內唯一的髮絲分隔 */
+.avatar-lg{width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;color:#fff}
+.avatar-lg svg{width:22px;height:22px}
+.member-card b{font-size:14px;display:block}
+.member-card small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.badge{display:inline-block;font-size:10px;font-weight:600;color:#1a1206;
+  background:var(--accent2);padding:1px 8px;border-radius:10px;margin-top:4px}
+.member-links{padding-top:8px;display:flex;flex-direction:column}
+.member-links button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:9px 10px;border-radius:8px;font-size:13px;color:var(--text)}
+.member-links button svg{width:16px;height:16px;color:var(--muted)}
+.member-links button:hover{background:var(--card)}
+.member-links hr{border:none;border-top:1px solid var(--line);margin:6px 0}
+.member-links .danger,.member-links .danger svg{color:#ff7a7a}
+
+/* ========== 頂部主打展區：橫向捲動卡片（隱藏卷軸，以箭頭控制） ========== */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-head h2{font-size:18px}
+.hero-ctrl{display:flex;gap:4px}
+.hero-ctrl button{width:32px;height:32px;border-radius:8px;color:var(--muted);
+  font-size:20px;line-height:1;transition:.15s}
+.hero-ctrl button:hover{color:var(--text);background:var(--card)}
+.hero-scroll{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.hero-card{min-width:340px;max-width:340px;scroll-snap-align:start;cursor:pointer;
+  background:var(--card);border-radius:var(--radius);
+  overflow:hidden;transition:transform .18s,box-shadow .18s}
+.hero-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.hero-cover{height:150px;display:flex;align-items:center;justify-content:center;position:relative}
+.hero-cover span{font-size:22px;font-weight:700;color:rgba(255,255,255,.92);text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.hero-badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.45);
+  font-size:11px;padding:3px 10px;border-radius:20px;color:#fff}
+.hero-body{padding:14px 16px}
+.hero-body h3{font-size:15px;margin-bottom:6px}
+.hero-body p{font-size:12px;color:var(--muted);line-height:1.6;height:38px;overflow:hidden}
+.hero-meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px;
+  font-size:12px;color:var(--muted)}
+.btn-primary{background:var(--accent);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px}
+
+/* ========== 篩選展區（與主打區之間只靠大間距分隔，不畫線） ========== */
+.exhibition{margin-top:var(--sp-7)}
+/* 篩選列：左群組＝篩選（排序＋熱門標籤），最右群組＝檢視方式（三種圖示） */
+.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin-bottom:20px;padding:14px 18px;
+  background:var(--panel);border-radius:var(--radius)}
+.filter-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted)}
+.filter-left>svg{width:15px;height:15px;flex-shrink:0}
+.search{display:flex;align-items:center;gap:8px;
+  background:var(--card);border-radius:8px;padding:7px 12px}
+.search svg{width:14px;height:14px;color:var(--muted);flex-shrink:0}
+.search input{background:none;border:none;outline:none;color:var(--text);width:100%;font-size:13px}
+.sort{background:var(--card);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px}
+/* 熱門標籤開關按鈕（屬於篩選群組，點擊在下方展開／收回標籤面板） */
+.tag-toggle{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
+  background:var(--card);color:var(--muted);font-size:13px;transition:.15s}
+.tag-toggle:hover{color:var(--text)}
+.tag-toggle.open{background:var(--card-hi);color:var(--text)}
+.tag-toggle svg{width:14px;height:14px;transition:transform .2s}
+.tag-toggle.open svg{transform:rotate(180deg)} /* 展開時箭頭翻轉 */
+.tag-toggle .cur{color:var(--accent);font-weight:600}
+/* 檢視群組：三種檢視方式切換圖示（詳細／方格／縮圖），固定在最右 */
+.view-toggle{display:flex;gap:4px;margin-left:auto;background:var(--card);border-radius:8px;padding:4px}
+.view-btn{padding:6px 8px;border-radius:6px;color:var(--muted)}
+.view-btn svg{width:16px;height:16px}
+.view-btn.active{background:var(--accent);color:#fff}
+
+/* ========== 標籤面板：預設收回，點「熱門標籤」向下方展開 ========== */
+.tag-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.tag-panel.open{grid-template-rows:1fr;margin-bottom:20px}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;overflow:hidden;min-height:0}
+.chip{padding:5px 14px;border-radius:20px;background:var(--card);color:var(--muted);
+  font-size:12px;transition:.15s}
+.chip:hover{color:var(--text);background:var(--card-hi)}
+.chip.active{background:var(--accent);color:#fff}
+.chip .n{opacity:.65;margin-left:4px}
+
+/* ========== 作品清單共用樣式（無框卡片：靠底色與間距分層，hover 以浮起陰影回饋） ========== */
+.work{transition:transform .18s,box-shadow .18s;cursor:pointer}
+.work:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.cover{border-radius:8px;display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.92);font-weight:700;text-align:center;padding:8px;
+  font-size:14px;text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.meta{font-size:12px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.meta .star{color:var(--accent2)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tags i{font-style:normal;font-size:11px;background:rgba(255,255,255,.06);
+  padding:2px 8px;border-radius:12px;color:var(--muted)}
+.desc{font-size:13px;color:var(--muted);line-height:1.7}
+
+/* —— 密度一：詳細檢視（單欄清單，完整介紹） —— */
+.works.list{display:flex;flex-direction:column;gap:16px}
+.works.list .work{display:flex;gap:16px;background:var(--card);border-radius:var(--radius);padding:16px}
+.works.list .cover{width:92px;height:128px;flex-shrink:0}
+.works.list .work-body h3{font-size:16px;margin-bottom:6px}
+
+/* —— 密度二：方格檢視（多欄卡片，精簡介紹；auto-fill 讓欄數隨寬度自動增減） —— */
+.works.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px}
+.works.grid .work{background:var(--card);border-radius:var(--radius);overflow:hidden}
+.works.grid .cover{width:100%;height:150px;border-radius:0}
+.works.grid .work-body{padding:12px}
+.works.grid .work-body h3{font-size:14px;margin-bottom:6px}
+.works.grid .tags{display:none}
+.works.grid .desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;font-size:12px}
+
+/* —— 密度三：縮圖檢視（密集封面牆，只秀標題） —— */
+.works.dense{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px}
+.works.dense .work{border-radius:8px}
+.works.dense .work:hover{box-shadow:none}
+.works.dense .cover{width:100%;aspect-ratio:3/4}
+.works.dense .work-body{padding:6px 2px}
+.works.dense .work-body h3{font-size:12px;font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.works.dense .meta,.works.dense .tags,.works.dense .desc{display:none}
+
+/* ========== 分頁控制：取代捲動，頁碼＋左右箭頭（無框、當前頁以底線標記） ========== */
+.pagination{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:36px}
+.page-btn{min-width:32px;height:32px;border-radius:8px;color:var(--muted);font-size:13px;
+  display:flex;align-items:center;justify-content:center;padding:0 6px;position:relative;transition:.15s}
+.page-btn:hover{color:var(--text);background:var(--card)}
+.page-btn.cur{color:var(--accent);font-weight:700}
+.page-btn.cur::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  width:14px;height:2px;border-radius:2px;background:var(--accent)}
+.page-arrow{font-size:18px}
+.page-btn:disabled{opacity:.25;pointer-events:none}
+
+/* ========== 其他：空狀態、頁尾、提示 Toast ========== */
+.empty{padding:60px;text-align:center;color:var(--muted)}
+.main-foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12px;text-align:center} /* 頁尾保留一條髮絲線收束版面 */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:rgba(20,27,44,.95);padding:10px 20px;border-radius:8px;font-size:13px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:.3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+
+/* ========== 行動版：精簡品牌頂欄（固定列保留髮絲線） ========== */
+.topbar{display:none;position:fixed;top:0;left:0;right:0;z-index:40;height:48px;
+  align-items:center;gap:10px;padding:0 16px;
+  background:var(--panel);border-bottom:1px solid var(--line);font-weight:600}
+.topbar .logo{width:28px;height:28px;font-size:14px;border-radius:8px}
+
+/* ========== 行動版：底部導航列（對應桌面左欄的精簡映射，桌面版隱藏） ========== */
+.bottom-nav{display:none}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 0;color:var(--muted);font-size:11px;border-radius:8px}
+.bn-item svg{width:20px;height:20px}
+.bn-item.active{color:var(--accent)}
+
+/* ========== 行動版：「更多」底部彈層（無框、以陰影浮起） ========== */
+.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);
+  opacity:0;pointer-events:none;transition:.25s;z-index:60}
+.sheet-backdrop.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--panel);
+  border-radius:16px 16px 0 0;box-shadow:0 -16px 40px rgba(0,0,0,.5);
+  padding:10px 16px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:.25s}
+.sheet.show{transform:none}
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--card-hi);margin:4px auto 12px}
+.sheet-title{font-size:11px;color:var(--muted);letter-spacing:2px;padding:0 6px 8px}
+.sheet-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  padding:12px;border-radius:8px;font-size:14px;color:var(--text)}
+.sheet-item svg{width:18px;height:18px;color:var(--muted)}
+.sheet-item:hover{background:var(--card)}
+.sheet-foot{margin-top:10px;text-align:center;color:var(--muted);font-size:11px}
+
+/* ============================================================
+   縮窗對應策略（寬 → 窄共四段）：
+   ≥1341px  全版心（側欄＋內容）整體置中，多餘寬度均分為兩側留白
+   1101–1340px  內容柱流動收縮，間距不變，網格自動減列
+   861–1100px  側欄收成 64px 純圖示窄欄，版心上限同步改為 64＋1127
+   ≤860px   側欄退場 → 底部導航列＋品牌頂欄
+   ≤480px   進一步壓縮間距與卡片尺寸
+   ============================================================ */
+
+/* —— 第三段：平板橫向，側欄收成純圖示窄欄（214px → 64px） —— */
+@media(max-width:1100px) and (min-width:861px){
+  .layout{max-width:calc(64px + var(--content-max))} /* 版心隨窄欄重新計算 */
+  .sidebar{width:64px}
+  .brand{align-items:center;padding:32px 0 16px} /* 窄欄時 LOGO 維持略低的落差 */
+  .brand h1,.brand small,.nav-group-title,.sidebar-foot{display:none} /* 只留 LOGO 與圖示 */
+  .nav{padding:8px 6px}
+  .nav-item{justify-content:center;padding:12px 0} /* 文字隱藏，靠 title 屬性提示 */
+  .nav-item .lbl{display:none}
+  .nav-item svg{width:20px;height:20px}
+}
+
+/* —— 第四段：行動版 —— */
+@media(max-width:860px){
+  .sidebar{display:none}          /* 全域導航改由底部導航列承擔 */
+  .topbar{display:flex}           /* 只保留品牌識別的精簡頂欄 */
+  .wrap{padding:68px 16px 100px}  /* 上留頂欄、下留底部導航列空間，內距改 16px */
+  /* 頂部列貼齊品牌頂欄下方，捲動時一併常駐 */
+  .page-head{top:48px;margin:-20px -16px 16px;padding:10px 16px}
+  .page-title{font-size:15px}
+  .head-search{width:auto;flex:1;min-width:0}
+  .toast{bottom:84px}             /* 避開底部導航列 */
+  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:var(--panel);border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom))} /* 相容 iPhone 底部安全區 */
+}
+
+/* —— 第五段：小手機，進一步壓縮間距與卡片 —— */
+@media(max-width:480px){
+  .hero-card{min-width:280px;max-width:280px}
+  .hero-scroll{gap:12px}
+  .exhibition{margin-top:40px}
+  .filter-bar{padding:12px}
+  .works.grid{gap:14px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+  .works.dense{gap:10px;grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+  .section-head h2{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- 行動版精簡品牌頂欄（桌面版隱藏） -->
+<header class="topbar">
+  <div class="logo">漫</div>
+  <span>漫閱 ComicShelf</span>
+</header>
+
+<!-- ===== 全版心：側欄＋內容作為一個整體置中 ===== -->
+<div class="layout">
+
+  <!-- 左側導覽：無獨立底色，按鈕懸浮於展區左側；LOGO 刻意略低於展區最高點 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo">漫</div>
+      <div><h1>漫閱</h1><small>ComicShelf 示範框架</small></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-group-title">瀏覽</div>
+      <button class="nav-item active" data-page="首頁" title="首頁">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
+        <span class="lbl">首頁</span></button>
+      <div class="nav-group-title">我的</div>
+      <button class="nav-item" data-page="我的收藏" title="我的收藏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21C7 16.5 3 13 3 8.8 3 6 5.2 4 7.8 4c1.7 0 3.2.9 4.2 2.3C13 4.9 14.5 4 16.2 4 18.8 4 21 6 21 8.8c0 4.2-4 7.7-9 12.2z"/></svg>
+        <span class="lbl">我的收藏</span></button>
+      <button class="nav-item" data-page="觀看紀錄" title="觀看紀錄">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span class="lbl">觀看紀錄</span></button>
+      <button class="nav-item" data-page="我的設定" title="我的設定">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        <span class="lbl">我的設定</span></button>
+      <div class="nav-group-title">本站</div>
+      <button class="nav-item" data-page="關於本站" title="關於本站">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+        <span class="lbl">關於本站</span></button>
+      <button class="nav-item" data-page="使用說明" title="使用說明">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.1 1-1.1 1.8v.5"/><path d="M12 17h.01"/></svg>
+        <span class="lbl">使用說明</span></button>
+    </nav>
+    <div class="sidebar-foot">v0.7 佔位版本 · 資料皆為示意</div>
+  </aside>
+
+  <!-- 右側主內容區：內容柱最大 1127px -->
+  <main class="main">
+    <div class="wrap">
+
+      <!-- 內容區頂部列：左＝目前頁面標題，右上＝全站搜尋框，最右＝會員人像（點開身份與會員管理） -->
+      <div class="page-head">
+        <div class="page-title" id="pageTitle">首頁</div>
+        <div class="head-actions">
+          <label class="search head-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="searchInput" placeholder="搜尋作品或作者…">
+          </label>
+          <div class="member">
+            <button class="avatar-btn" id="avatarBtn" aria-label="會員選單">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+            </button>
+            <!-- 會員下拉：身份摘要卡＋會員管理連結（皆佔位） -->
+            <div class="member-menu" id="memberMenu">
+              <div class="member-card">
+                <div class="avatar-lg">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+                </div>
+                <div>
+                  <b>訪客使用者</b>
+                  <span class="badge">一般會員</span>
+                  <small>guest@example.com</small>
+                </div>
+              </div>
+              <div class="member-links">
+                <button data-act="會員中心">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+                  會員中心</button>
+                <button data-act="訂閱與贊助">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 8l4 4 5-6 5 6 4-4v9H3z"/></svg>
+                  訂閱與贊助</button>
+                <button data-act="帳號安全">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/></svg>
+                  帳號安全</button>
+                <button data-act="通知設定">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+                  通知設定</button>
+                <hr>
+                <button class="danger" data-act="登出">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+                  登出</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 頂部主打展區：橫向捲動挑選（無卷軸，以箭頭控制） -->
+      <section>
+        <div class="section-head">
+          <h2>🔥 本日主推</h2>
+          <div class="hero-ctrl">
+            <button id="heroPrev" aria-label="向左捲">‹</button>
+            <button id="heroNext" aria-label="向右捲">›</button>
+          </div>
+        </div>
+        <div class="hero-scroll" id="heroScroll"></div>
+      </section>
+
+      <!-- 篩選展區：最新發布 -->
+      <section class="exhibition">
+        <div class="section-head">
+          <h2>🆕 最新發布</h2>
+        </div>
+
+        <!-- 篩選列：左群組＝篩選（排序＋熱門標籤，決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
+        <div class="filter-bar">
+          <!-- 篩選群組 -->
+          <div class="filter-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg>
+            <select class="sort" id="sortSelect">
+              <option value="latest">最新上架</option>
+              <option value="rating">最高評分</option>
+              <option value="follows">最多收藏</option>
+            </select>
+            <!-- 熱門標籤開關：點擊在下方展開標籤面板，再點收回；按鈕上顯示目前篩選中的標籤 -->
+            <button class="tag-toggle" id="tagToggle">
+              熱門標籤<span class="cur" id="curTag"></span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
+          <!-- 檢視群組（最右）：三種檢視方式切換 -->
+          <div class="view-toggle">
+            <button class="view-btn active" data-view="list" title="詳細檢視">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="4" height="4" rx="1"/><path d="M10 6h11"/><rect x="3" y="10" width="4" height="4" rx="1"/><path d="M10 12h11"/><rect x="3" y="16" width="4" height="4" rx="1"/><path d="M10 18h11"/></svg>
+            </button>
+            <button class="view-btn" data-view="grid" title="方格檢視">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+            </button>
+            <button class="view-btn" data-view="dense" title="縮圖檢視">
+              <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 標籤面板：預設收回，展開時向下推出（JS 依資料自動產生標籤） -->
+        <div class="tag-panel" id="tagPanel">
+          <div class="tag-row" id="tagRow"></div>
+        </div>
+
+        <!-- 作品清單：切換 class 即可改變資訊密度（list / grid / dense） -->
+        <div class="works list" id="works"></div>
+
+        <!-- 分頁控制：以頁碼＋箭頭取代捲動（JS 依筆數自動產生） -->
+        <div class="pagination" id="pagination"></div>
+      </section>
+
+      <footer class="main-foot">此為 UI/UX 示範框架，所有作品資料皆為佔位示意。</footer>
+    </div>
+  </main>
+</div>
+
+<!-- ===== 行動版底部導航列：與桌面左欄同一套 IA 與圖示、相同順序 ===== -->
+<nav class="bottom-nav">
+  <button class="bn-item active" data-page="首頁">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>
+    <span>首頁</span></button>
+  <button class="bn-item" data-page="我的收藏">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 21C7 16.5 3 13 3 8.8 3 6 5.2 4 7.8 4c1.7 0 3.2.9 4.2 2.3C13 4.9 14.5 4 16.2 4 18.8 4 21 6 21 8.8c0 4.2-4 7.7-9 12.2z"/></svg>
+    <span>收藏</span></button>
+  <button class="bn-item" data-page="觀看紀錄">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    <span>紀錄</span></button>
+  <button class="bn-item" data-page="我的設定">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+    <span>設定</span></button>
+  <button class="bn-item" id="moreBtn">
+    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+    <span>更多</span></button>
+</nav>
+
+<!-- ===== 「更多」底部彈層：收納桌面版「本站」群組（關於本站／使用說明） ===== -->
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">本站</div>
+  <button class="sheet-item" data-page="關於本站">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+    關於本站</button>
+  <button class="sheet-item" data-page="使用說明">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.1 1-1.1 1.8v.5"/><path d="M12 17h.01"/></svg>
+    使用說明</button>
+  <div class="sheet-foot">v0.7 佔位版本 · 資料皆為示意</div>
+</div>
+
+<!-- 全域提示 Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 佔位資料：作品清單 ================= */
+const WORKS=[
+  {id:1, title:'星塵劍客',       author:'作者甲', status:'連載中', rating:8.7, follows:15234, added:0,  hue:262, featured:true, tags:['奇幻','冒險'], desc:'背負星屑之劍的少年，踏上尋找失落星座的旅程。'},
+  {id:2, title:'深夜食堂物語',   author:'作者乙', status:'已完結', rating:9.1, follows:22108, added:2,  hue:25,  featured:true, tags:['日常','治癒'], desc:'只在午夜營業的小店，用一道菜接住每個疲憊的靈魂。'},
+  {id:3, title:'代號：青鳥',     author:'作者丙', status:'連載中', rating:8.2, follows:9870,  added:1,  hue:200, featured:true, tags:['科幻','懸疑'], desc:'記憶可以被交易的城市裡，一名信使追查自己的過去。'},
+  {id:4, title:'櫻色約定',       author:'作者丁', status:'連載中', rating:7.9, follows:7650,  added:3,  hue:330, featured:true, tags:['戀愛','校園'], desc:'畢業前的最後一個春天，兩人許下十年後再見的約定。'},
+  {id:5, title:'鋼鐵叢林',       author:'作者戊', status:'休載中', rating:8.9, follows:18900, added:5,  hue:150, featured:true, tags:['科幻','熱血'], desc:'巨構都市的最底層，少年駕駛回收機甲向上攀登。'},
+  {id:6, title:'霧中偵探社',     author:'作者己', status:'連載中', rating:8.4, follows:12300, added:4,  hue:220, featured:true, tags:['懸疑','歷史'], desc:'濃霧籠罩的港都，三人偵探社接下不存在的委託。'},
+  {id:7, title:'山神與便利商店', author:'作者甲', status:'連載中', rating:8.0, follows:6400,  added:6,  hue:120, tags:['日常','奇幻'], desc:'沒落山神在人間打工，店裡的關東煮意外受歡迎。'},
+  {id:8, title:'第七競技場',     author:'作者庚', status:'連載中', rating:7.6, follows:5400,  added:7,  hue:0,   tags:['熱血','冒險'], desc:'敗者失去名字的死鬥擂台，無名選手挑戰七層之巔。'},
+  {id:9, title:'圖書館的貓',     author:'作者乙', status:'已完結', rating:9.3, follows:25600, added:9,  hue:45,  tags:['治癒','日常'], desc:'會說話的貓館長，為每本找不到讀者的書尋找歸宿。'},
+  {id:10,title:'邊境商隊',       author:'作者辛', status:'連載中', rating:8.1, follows:8900,  added:8,  hue:180, tags:['冒險','歷史'], desc:'沿著古代商路旅行的隊伍，販賣貨物也販賣故事。'},
+  {id:11,title:'量子戀人',       author:'作者丙', status:'連載中', rating:7.8, follows:7100,  added:10, hue:290, tags:['戀愛','科幻'], desc:'平行世界的兩人共享同一個夢，卻只有一人記得。'},
+  {id:12,title:'怪談研究會',     author:'作者壬', status:'連載中', rating:8.5, follows:11200, added:11, hue:250, tags:['懸疑','校園'], desc:'放學後的舊校舍，社團記錄著一一應驗的校園怪談。'}
+];
+
+/* ================= 全域狀態（檢視密度／排序／標籤／關鍵字／頁碼） ================= */
+const PAGE_SIZE=8; // 每頁作品數（分頁取代捲動）
+const state={ view:'list', sort:'latest', tag:'全部', query:'', page:1 };
+
+const $=id=>document.getElementById(id);
+const fmt=n=>n.toLocaleString();
+
+/* ================= 小工具：浮現提示 Toast ================= */
+let toastTimer;
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+/* ================= 渲染：頂部主打（橫向捲動卡片） ================= */
+function renderHero(){
+  $('heroScroll').innerHTML = WORKS.filter(w=>w.featured).map(w=>`
+    <article class="hero-card" data-title="${w.title}">
+      <div class="hero-cover" style="background:linear-gradient(135deg,hsl(${w.hue},65%,52%),hsl(${w.hue+45},65%,38%))">
+        <span class="hero-badge">主打</span><span>${w.title}</span>
+      </div>
+      <div class="hero-body">
+        <h3>${w.title}</h3>
+        <p>${w.desc}</p>
+        <div class="hero-meta">
+          <span>★ ${w.rating} · ♥ ${fmt(w.follows)}</span>
+          <button class="btn-primary">開始閱讀</button>
+        </div>
+      </div>
+    </article>`).join('');
+}
+
+/* ================= 渲染：熱門標籤（依資料統計數量，產生篩選 chips） ================= */
+function tagCounts(){
+  const map={};
+  WORKS.forEach(w=>w.tags.forEach(t=>map[t]=(map[t]||0)+1));
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]); // 依作品數排序
+}
+function renderTagRow(){
+  const tags=[['全部',WORKS.length],...tagCounts()];
+  $('tagRow').innerHTML = tags.map(([t,n])=>
+    `<button class="chip ${state.tag===t?'active':''}" data-tag="${t}">#${t}<span class="n">${n}</span></button>`).join('');
+}
+
+/* ================= 渲染：作品清單（篩選→排序→分頁→依密度輸出） ================= */
+function getFiltered(){
+  const list = WORKS.filter(w=>
+    (state.tag==='全部' || w.tags.includes(state.tag)) &&
+    (w.title.includes(state.query) || w.author.includes(state.query)));
+  const sorters={
+    latest:(a,b)=>a.added-b.added,       // 最新上架
+    rating:(a,b)=>b.rating-a.rating,     // 最高評分
+    follows:(a,b)=>b.follows-a.follows   // 最多收藏
+  };
+  return list.sort(sorters[state.sort]);
+}
+function workCard(w){
+  return `<article class="work" data-title="${w.title}">
+    <div class="cover" style="background:linear-gradient(135deg,hsl(${w.hue},65%,52%),hsl(${w.hue+45},65%,38%))">${w.title}</div>
+    <div class="work-body">
+      <h3>${w.title}</h3>
+      <div class="meta"><span>${w.author}</span><span>${w.status}</span><span class="star">★ ${w.rating}</span><span>♥ ${fmt(w.follows)}</span></div>
+      <div class="tags">${w.tags.map(t=>`<i>#${t}</i>`).join('')}</div>
+      <p class="desc">${w.desc}</p>
+    </div>
+  </article>`;
+}
+function renderWorks(){
+  const list=getFiltered();
+  const pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+  if(state.page>pages) state.page=pages; // 篩選後頁數變少時收回頁碼
+  const slice=list.slice((state.page-1)*PAGE_SIZE, state.page*PAGE_SIZE);
+  $('works').innerHTML = slice.length
+    ? slice.map(workCard).join('')
+    : `<div class="empty">找不到符合的作品，換個關鍵字或標籤試試。</div>`;
+  renderPagination(pages);
+}
+
+/* ================= 渲染：分頁控制（頁碼＋左右箭頭） ================= */
+function renderPagination(pages){
+  if(pages<=1){ $('pagination').innerHTML=''; return; } // 只有一頁時不顯示
+  let html=`<button class="page-btn page-arrow" data-p="prev" ${state.page===1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=pages;i++)
+    html+=`<button class="page-btn ${i===state.page?'cur':''}" data-p="${i}">${i}</button>`;
+  html+=`<button class="page-btn page-arrow" data-p="next" ${state.page===pages?'disabled':''}>›</button>`;
+  $('pagination').innerHTML=html;
+}
+$('pagination').addEventListener('click',e=>{
+  const b=e.target.closest('.page-btn'); if(!b) return;
+  const pages=Math.max(1,Math.ceil(getFiltered().length/PAGE_SIZE));
+  if(b.dataset.p==='prev')      state.page=Math.max(1,state.page-1);
+  else if(b.dataset.p==='next') state.page=Math.min(pages,state.page+1);
+  else                          state.page=+b.dataset.p;
+  renderWorks();
+  document.querySelector('.exhibition').scrollIntoView({behavior:'smooth'}); // 換頁後回到展區頂部
+});
+
+/* ================= 互動：檢視群組——三種檢視方式切換 ================= */
+document.querySelectorAll('.view-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    state.view=btn.dataset.view;
+    document.querySelectorAll('.view-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    $('works').className='works '+state.view; // 只換 class，HTML 不變
+  });
+});
+
+/* ================= 互動：篩選群組——排序篩選器與全站搜尋（條件改變時回到第一頁） ================= */
+$('sortSelect').addEventListener('change',e=>{ state.sort=e.target.value; state.page=1; renderWorks(); });
+$('searchInput').addEventListener('input',e=>{ state.query=e.target.value.trim(); state.page=1; renderWorks(); });
+
+/* ================= 互動：篩選群組——熱門標籤面板（展開／收回） ================= */
+$('tagToggle').addEventListener('click',()=>{
+  $('tagPanel').classList.toggle('open');
+  $('tagToggle').classList.toggle('open');
+});
+
+/* ================= 互動：標籤篩選（點 chip 套用，按鈕上同步顯示目前標籤） ================= */
+function setTag(tag){
+  state.tag=tag; state.page=1; renderTagRow(); renderWorks();
+  $('curTag').textContent = tag==='全部' ? '' : '#'+tag; // 開關按鈕上顯示目前篩選
+  if(tag!=='全部') toast(`已篩選標籤「#${tag}」`);
+}
+$('tagRow').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip'); if(chip) setTag(chip.dataset.tag);
+});
+
+/* ================= 互動：全域導航（桌面左欄＋行動底列＋彈層，三方同步選取狀態） ================= */
+function setActivePage(page){
+  // 同步所有帶 data-page 的導航按鈕（不論在左欄、底列或彈層）
+  document.querySelectorAll('[data-page]').forEach(el=>{
+    el.classList.toggle('active', el.dataset.page===page);
+  });
+  // 若選的是站務頁，行動版「更多」按鈕也亮起，暗示其所在位置
+  $('moreBtn').classList.toggle('active', ['關於本站','使用說明'].includes(page));
+  $('pageTitle').textContent=page; // 頂部列左側同步顯示目前頁面
+  if(page!=='首頁') toast(`「${page}」為佔位頁面`);
+}
+document.querySelectorAll('.nav-item,.bn-item[data-page],.sheet-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    setActivePage(item.dataset.page);
+    closeSheet(); // 從彈層點選後自動關閉
+  });
+});
+
+/* ================= 互動：會員選單（點人像開關，點外部關閉，項目皆佔位） ================= */
+$('avatarBtn').addEventListener('click',()=>{
+  $('memberMenu').classList.toggle('show');
+  $('avatarBtn').classList.toggle('open');
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.member')){
+    $('memberMenu').classList.remove('show');
+    $('avatarBtn').classList.remove('open');
+  }
+});
+document.querySelectorAll('.member-links button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    toast(`「${btn.dataset.act}」為佔位功能`);
+    $('memberMenu').classList.remove('show');
+    $('avatarBtn').classList.remove('open');
+  });
+});
+
+/* ================= 互動：行動版「更多」底部彈層開關 ================= */
+function openSheet(){ $('sheet').classList.add('show'); $('sheetBackdrop').classList.add('show'); }
+function closeSheet(){ $('sheet').classList.remove('show'); $('sheetBackdrop').classList.remove('show'); }
+$('moreBtn').addEventListener('click',openSheet);
+$('sheetBackdrop').addEventListener('click',closeSheet);
+
+/* ================= 互動：主打區左右捲動箭頭（取代卷軸） ================= */
+$('heroPrev').addEventListener('click',()=>$('heroScroll').scrollBy({left:-360,behavior:'smooth'}));
+$('heroNext').addEventListener('click',()=>$('heroScroll').scrollBy({left: 360,behavior:'smooth'}));
+
+/* ================= 互動：點作品卡片（佔位行為） ================= */
+document.addEventListener('click',e=>{
+  const card=e.target.closest('.work,.hero-card');
+  if(card) toast(`開啟《${card.dataset.title}》詳情頁（佔位）`);
+});
+
+/* ================= 初始化渲染 ================= */
+renderHero(); renderTagRow(); renderWorks();
+</script>
+</body>
+</html>
