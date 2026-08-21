@@ -140,19 +140,20 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
   opacity:0;transform:translateY(-6px);pointer-events:none;transition:.18s}
 .dd-panel.show{opacity:1;transform:none;pointer-events:auto}
 .chip-row{display:flex;gap:6px;flex-wrap:wrap;max-width:460px}
-.chip{padding:5px 14px;border-radius:20px;background:var(--card);color:var(--muted);
-  font-size:12px;transition:.15s;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:20px;
+  background:var(--card);color:var(--muted);font-size:12px;transition:.15s;white-space:nowrap}
+.chip svg{width:13px;height:13px}
 .chip:hover{color:var(--text);background:var(--card-hi)}
 .chip.active{background:var(--accent);color:#fff}
 .chip .n{opacity:.65;margin-left:4px}
 
-/* 排序按鈕：精選／最新／熱門（單選） */
-.sort-btns{display:flex;gap:6px}
-.sort-btn{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;
-  background:var(--card);color:var(--muted);font-size:13px;transition:.15s}
-.sort-btn svg{width:14px;height:14px}
-.sort-btn:hover{color:var(--text)}
-.sort-btn.active{background:var(--accent);color:#fff}
+/* 精選／最新／熱門圖示按鈕（僅圖示，與熱門標籤面板三項連動） */
+.mode-btns{display:flex;gap:4px}
+.mode-btn{width:30px;height:30px;border-radius:8px;background:var(--card);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.mode-btn svg{width:15px;height:15px}
+.mode-btn:hover{color:var(--text)}
+.mode-btn.active{background:var(--accent);color:#fff}
 
 /* 檢視群組：三種檢視方式切換圖示（詳細／方格／縮圖），固定在最右 */
 .view-toggle{display:flex;gap:4px;margin-left:auto;background:var(--card);border-radius:8px;padding:4px}
@@ -402,9 +403,9 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
       <!-- 篩選展區 -->
       <section class="exhibition">
 
-        <!-- 篩選列：語系下拉＋標籤下拉＋精選/最新/熱門按鈕（決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
+        <!-- 篩選列：語系下拉＋熱門標籤下拉＋精選/最新/熱門圖示按鈕（決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
         <div class="filter-bar">
-          <!-- 語系下拉（單選，向下展開橫列） -->
+          <!-- 語系下拉（單選，向下展開橫列，選完即收合） -->
           <div class="dropdown">
             <button class="dd-btn" id="langBtn" aria-haspopup="true" aria-expanded="false">
               <span class="lbl" id="langLabel">語系</span>
@@ -414,27 +415,27 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
               <div class="chip-row" id="langRow"></div>
             </div>
           </div>
-          <!-- 標籤下拉（複選，向下展開橫列） -->
+          <!-- 熱門標籤下拉（複選，向下展開橫列，選完不自動收合；含精選/最新/熱門三項預設選取） -->
           <div class="dropdown">
             <button class="dd-btn" id="tagBtn" aria-haspopup="true" aria-expanded="false">
-              <span class="lbl" id="tagLabel">標籤</span>
+              <span class="lbl" id="tagLabel">熱門標籤</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="dd-panel" id="tagPanel">
               <div class="chip-row" id="tagRow"></div>
             </div>
           </div>
-          <!-- 排序按鈕：精選／最新／熱門（單選） -->
-          <div class="sort-btns" id="sortBtns">
-            <button class="sort-btn" data-sort="featured" title="精選">
+          <!-- 精選／最新／熱門圖示按鈕（與熱門標籤面板內三項連動，僅圖示） -->
+          <div class="mode-btns" id="modeBtns">
+            <button class="mode-btn active" data-mode="featured" title="精選">
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.5 1.6 6.6L12 16.9 5.8 20l1.6-6.6L2.2 8.9l6.9-.6z"/></svg>
-              精選</button>
-            <button class="sort-btn active" data-sort="latest" title="最新">
+            </button>
+            <button class="mode-btn active" data-mode="latest" title="最新">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-              最新</button>
-            <button class="sort-btn" data-sort="hot" title="熱門">
+            </button>
+            <button class="mode-btn active" data-mode="hot" title="熱門">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-              熱門</button>
+            </button>
           </div>
           <!-- 檢視群組（最右）：三種檢視方式切換 -->
           <div class="view-toggle">
@@ -515,12 +516,20 @@ const WORKS=[
   {id:12,title:'怪談研究會',     author:'作者壬', status:'連載中', rating:8.5, follows:11200, added:11, hue:250, lang:'日文', tags:['懸疑','校園'], desc:'放學後的舊校舍，社團記錄著一一應驗的校園怪談。'}
 ];
 
-/* ================= 全域狀態（檢視密度／排序／語系／標籤／關鍵字／頁碼） ================= */
+/* ================= 全域狀態（檢視密度／語系／熱門標籤／精選最新熱門／關鍵字／頁碼） ================= */
 const PAGE_SIZE=8; // 每頁作品數（分頁取代捲動）
-const state={ view:'list', sort:'latest', lang:'全部', tags:[], query:'', page:1 };
+const state={ view:'list', lang:'全部', tags:[], modes:{featured:true,latest:true,hot:true}, query:'', page:1 };
 
 const $=id=>document.getElementById(id);
 const fmt=n=>n.toLocaleString();
+
+/* 精選／最新／熱門三項的圖示（面板 chips 與右側按鈕共用） */
+const MODE_ICONS={
+  featured:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.5 1.6 6.6L12 16.9 5.8 20l1.6-6.6L2.2 8.9l6.9-.6z"/></svg>',
+  latest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+  hot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>'
+};
+const MODE_LABELS={featured:'精選',latest:'最新',hot:'熱門'};
 
 /* ================= 小工具：浮現提示 Toast ================= */
 let toastTimer;
@@ -529,7 +538,7 @@ function toast(msg){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
 }
 
-/* ================= 渲染：語系／標籤篩選（依資料統計數量，輸出橫列 chips） ================= */
+/* ================= 渲染：語系／熱門標籤篩選（依資料統計數量，輸出橫列 chips） ================= */
 function tagCounts(){
   const map={};
   WORKS.forEach(w=>w.tags.forEach(t=>map[t]=(map[t]||0)+1));
@@ -540,32 +549,46 @@ function langCounts(){
   WORKS.forEach(w=>map[w.lang]=(map[w.lang]||0)+1);
   return Object.entries(map);
 }
+function selectedCount(){
+  return (state.modes.featured?1:0)+(state.modes.latest?1:0)+(state.modes.hot?1:0)+state.tags.length;
+}
 function renderFilters(){
   const langs=[['全部',WORKS.length],...langCounts()];
   $('langRow').innerHTML = langs.map(([l,n])=>
     `<button class="chip ${state.lang===l?'active':''}" data-lang="${l}">${l}<span class="n">${n}</span></button>`).join('');
-  $('tagRow').innerHTML = tagCounts().map(([t,n])=>
+  // 熱門標籤面板：精選/最新/熱門（含圖示，預設選取）＋內容標籤
+  const modes=['featured','latest','hot'].map(k=>
+    `<button class="chip ${state.modes[k]?'active':''}" data-mode="${k}">${MODE_ICONS[k]}${MODE_LABELS[k]}</button>`).join('');
+  const tags=tagCounts().map(([t,n])=>
     `<button class="chip ${state.tags.includes(t)?'active':''}" data-tag="${t}">${t}<span class="n">${n}</span></button>`).join('');
-  // 按鈕標籤：語系選中顯示其值，標籤選中顯示數量
+  $('tagRow').innerHTML = modes + tags;
+  // 按鈕標籤：語系選中顯示其值，熱門標籤選中顯示數量
   $('langLabel').textContent = state.lang==='全部' ? '語系' : state.lang;
-  $('tagLabel').textContent  = state.tags.length ? `標籤(${state.tags.length})` : '標籤';
+  $('tagLabel').textContent  = selectedCount() ? `熱門標籤(${selectedCount()})` : '熱門標籤';
   // 按鈕反饋：有選中時以強調色標記
   $('langBtn').classList.toggle('active', state.lang!=='全部');
-  $('tagBtn').classList.toggle('active',  state.tags.length>0);
+  $('tagBtn').classList.toggle('active',  selectedCount()>0);
+  // 右側圖示按鈕與面板三項維持一致
+  document.querySelectorAll('#modeBtns .mode-btn').forEach(b=>{
+    b.classList.toggle('active', !!state.modes[b.dataset.mode]);
+  });
 }
 
 /* ================= 渲染：作品清單（篩選→排序→分頁→依密度輸出） ================= */
 function getFiltered(){
-  const list = WORKS.filter(w=>
-    (state.lang==='全部' || w.lang===state.lang) &&
-    (state.tags.length===0 || state.tags.some(t=>w.tags.includes(t))) &&
-    (w.title.includes(state.query) || w.author.includes(state.query)));
-  const sorters={
-    latest:(a,b)=>a.added-b.added,        // 最新
-    featured:(a,b)=>b.rating-a.rating,    // 精選（最高評分）
-    hot:(a,b)=>b.follows-a.follows        // 熱門（最多收藏）
-  };
-  return list.sort(sorters[state.sort]);
+  const list = WORKS.filter(w=>{
+    if(state.lang!=='全部' && w.lang!==state.lang) return false;
+    if(state.tags.length && !state.tags.some(t=>w.tags.includes(t))) return false;
+    // 精選(評分≥8)／最新(近期上架)／熱門(人氣高)：複選聯集，全不選則不限制
+    const hit=[];
+    if(state.modes.featured) hit.push(w.rating>=8.0);
+    if(state.modes.latest)   hit.push(w.added<=4);
+    if(state.modes.hot)      hit.push(w.follows>=10000);
+    if(hit.length && !hit.some(Boolean)) return false;
+    if(state.query && !(w.title.includes(state.query)||w.author.includes(state.query))) return false;
+    return true;
+  });
+  return list.sort((a,b)=>a.added-b.added); // 預設最新上架在前
 }
 function workCard(w){
   return `<article class="work" data-title="${w.title}">
@@ -622,16 +645,14 @@ document.querySelectorAll('.view-btn').forEach(btn=>{
   });
 });
 
-/* ================= 互動：篩選群組——排序按鈕與全站搜尋（條件改變時回到第一頁） ================= */
-$('sortBtns').addEventListener('click',e=>{
-  const b=e.target.closest('.sort-btn'); if(!b) return;
-  state.sort=b.dataset.sort; state.page=1;
-  document.querySelectorAll('.sort-btn').forEach(x=>x.classList.toggle('active',x===b));
-  renderWorks();
+/* ================= 互動：精選/最新/熱門圖示按鈕與全站搜尋（條件改變時回到第一頁） ================= */
+$('modeBtns').addEventListener('click',e=>{
+  const b=e.target.closest('.mode-btn'); if(!b) return;
+  toggleMode(b.dataset.mode);
 });
 $('searchInput').addEventListener('input',e=>{ state.query=e.target.value.trim(); state.page=1; renderWorks(); });
 
-/* ================= 互動：語系（單選）／標籤（複選）篩選視窗 ================= */
+/* ================= 互動：語系（單選）／熱門標籤（複選）篩選視窗 ================= */
 function setLang(lang){
   state.lang=lang; state.page=1; renderFilters(); renderWorks();
   if(lang!=='全部') toast(`已篩選語系「${lang}」`);
@@ -639,6 +660,10 @@ function setLang(lang){
 function toggleTag(tag){
   const i=state.tags.indexOf(tag);
   if(i>=0) state.tags.splice(i,1); else state.tags.push(tag);
+  state.page=1; renderFilters(); renderWorks();
+}
+function toggleMode(key){
+  state.modes[key]=!state.modes[key];
   state.page=1; renderFilters(); renderWorks();
 }
 function openPanel(btn, panel, open){
@@ -661,7 +686,8 @@ $('tagBtn').addEventListener('click',()=>{
 });
 $('tagRow').addEventListener('click',e=>{
   const chip=e.target.closest('.chip'); if(!chip) return;
-  toggleTag(chip.dataset.tag); // 複選：維持展開，可連續勾選
+  if(chip.dataset.mode) toggleMode(chip.dataset.mode); else toggleTag(chip.dataset.tag);
+  // 複選：維持展開，除非用戶自行關閉
 });
 document.addEventListener('click',e=>{
   document.querySelectorAll('.dropdown').forEach(d=>{
