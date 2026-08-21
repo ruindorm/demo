@@ -39,9 +39,9 @@ svg{display:block}
 ::-webkit-scrollbar-thumb{background:#3a4763;border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
-/* 橫向捲動區與側欄：完全隱藏卷軸，改用箭頭／分頁控制 */
-.hero-scroll,.nav{scrollbar-width:none}
-.hero-scroll::-webkit-scrollbar,.nav::-webkit-scrollbar{display:none}
+/* 側欄：完全隱藏卷軸 */
+.nav{scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
 
 /* ========== 左側導覽：214px 固定、無獨立底色（與展區同背景），按鈕如懸浮在展區左側 ========== */
 .sidebar{width:var(--sidebar-w);flex-shrink:0;
@@ -79,6 +79,12 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 
 /* ========== 會員頭像按鈕與下拉選單（身份＋會員管理，無框、以陰影浮起） ========== */
 .member{position:relative}
+.bell-btn{width:34px;height:34px;border-radius:50%;background:var(--card);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;transition:.15s;position:relative}
+.bell-btn svg{width:18px;height:18px}
+.bell-btn:hover{color:var(--accent);background:var(--card-hi)}
+.bell-btn .dot{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--panel)}
 .avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--card);color:var(--muted);
   display:flex;align-items:center;justify-content:center;transition:.15s}
 .avatar-btn svg{width:18px;height:18px}
@@ -106,60 +112,27 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 .member-links hr{border:none;border-top:1px solid var(--line);margin:6px 0}
 .member-links .danger,.member-links .danger svg{color:#ff7a7a}
 
-/* ========== 頂部主打展區：橫向捲動卡片（隱藏卷軸，以箭頭控制） ========== */
+/* ========== 展區標題列 ========== */
 .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .section-head h2{font-size:18px}
-.hero-ctrl{display:flex;gap:4px}
-.hero-ctrl button{width:32px;height:32px;border-radius:8px;color:var(--muted);
-  font-size:20px;line-height:1;transition:.15s}
-.hero-ctrl button:hover{color:var(--text);background:var(--card)}
-.hero-scroll{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
-.hero-card{min-width:340px;max-width:340px;scroll-snap-align:start;cursor:pointer;
-  background:var(--card);border-radius:var(--radius);
-  overflow:hidden;transition:transform .18s,box-shadow .18s}
-.hero-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.4)}
-.hero-cover{height:150px;display:flex;align-items:center;justify-content:center;position:relative}
-.hero-cover span{font-size:22px;font-weight:700;color:rgba(255,255,255,.92);text-shadow:0 2px 8px rgba(0,0,0,.4)}
-.hero-badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.45);
-  font-size:11px;padding:3px 10px;border-radius:20px;color:#fff}
-.hero-body{padding:14px 16px}
-.hero-body h3{font-size:15px;margin-bottom:6px}
-.hero-body p{font-size:12px;color:var(--muted);line-height:1.6;height:38px;overflow:hidden}
-.hero-meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px;
-  font-size:12px;color:var(--muted)}
-.btn-primary{background:var(--accent);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px}
 
-/* ========== 篩選展區（與主打區之間只靠大間距分隔，不畫線） ========== */
-.exhibition{margin-top:var(--sp-7)}
-/* 篩選列：左群組＝篩選（排序＋熱門標籤），最右群組＝檢視方式（三種圖示） */
-.filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  margin-bottom:20px;padding:14px 18px;
-  background:var(--panel);border-radius:var(--radius)}
-.filter-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted)}
-.filter-left>svg{width:15px;height:15px;flex-shrink:0}
+/* ========== 篩選展區 ========== */
+.exhibition{margin-top:0}
+/* 篩選列：排序下拉＋標籤 chips＋最右檢視方式（無背景色塊，僅保留按鈕） */
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
 .search{display:flex;align-items:center;gap:8px;
   background:var(--card);border-radius:8px;padding:7px 12px}
 .search svg{width:14px;height:14px;color:var(--muted);flex-shrink:0}
 .search input{background:none;border:none;outline:none;color:var(--text);width:100%;font-size:13px}
 .sort{background:var(--card);color:var(--text);border-radius:8px;padding:7px 10px;font-size:13px}
-/* 熱門標籤開關按鈕（屬於篩選群組，點擊在下方展開／收回標籤面板） */
-.tag-toggle{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
-  background:var(--card);color:var(--muted);font-size:13px;transition:.15s}
-.tag-toggle:hover{color:var(--text)}
-.tag-toggle.open{background:var(--card-hi);color:var(--text)}
-.tag-toggle svg{width:14px;height:14px;transition:transform .2s}
-.tag-toggle.open svg{transform:rotate(180deg)} /* 展開時箭頭翻轉 */
-.tag-toggle .cur{color:var(--accent);font-weight:600}
 /* 檢視群組：三種檢視方式切換圖示（詳細／方格／縮圖），固定在最右 */
 .view-toggle{display:flex;gap:4px;margin-left:auto;background:var(--card);border-radius:8px;padding:4px}
 .view-btn{padding:6px 8px;border-radius:6px;color:var(--muted)}
 .view-btn svg{width:16px;height:16px}
 .view-btn.active{background:var(--accent);color:#fff}
 
-/* ========== 標籤面板：預設收回，點「熱門標籤」向下方展開 ========== */
-.tag-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
-.tag-panel.open{grid-template-rows:1fr;margin-bottom:20px}
-.tag-row{display:flex;gap:8px;flex-wrap:wrap;overflow:hidden;min-height:0}
+/* ========== 標籤列：與篩選列同行，常駐顯示 ========== */
+.tag-row{display:flex;gap:8px;flex-wrap:wrap}
 .chip{padding:5px 14px;border-radius:20px;background:var(--card);color:var(--muted);
   font-size:12px;transition:.15s}
 .chip:hover{color:var(--text);background:var(--card-hi)}
@@ -167,8 +140,14 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 .chip .n{opacity:.65;margin-left:4px}
 
 /* ========== 作品清單共用樣式（無框卡片：靠底色與間距分層，hover 以浮起陰影回饋） ========== */
-.work{transition:transform .18s,box-shadow .18s;cursor:pointer}
+.work{position:relative;transition:transform .18s,box-shadow .18s;cursor:pointer}
 .work:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.4)}
+/* 作品卡片右上角動作列：加入最愛／稍後觀看／分享社群 */
+.work-actions{position:absolute;top:8px;right:8px;z-index:3;display:flex;gap:5px}
+.work-actions button{font-size:10px;padding:3px 7px;border-radius:14px;
+  background:rgba(0,0,0,.55);color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  white-space:nowrap;transition:.15s}
+.work-actions button:hover{background:var(--accent)}
 .cover{border-radius:8px;display:flex;align-items:center;justify-content:center;
   color:rgba(255,255,255,.92);font-weight:700;text-align:center;padding:8px;
   font-size:14px;text-shadow:0 1px 6px rgba(0,0,0,.35)}
@@ -203,7 +182,7 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 .works.dense .work-body{padding:6px 2px}
 .works.dense .work-body h3{font-size:12px;font-weight:500;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.works.dense .meta,.works.dense .tags,.works.dense .desc{display:none}
+.works.dense .meta,.works.dense .tags,.works.dense .desc,.works.dense .work-actions{display:none}
 
 /* ========== 分頁控制：取代捲動，頁碼＋左右箭頭（無框、當前頁以底線標記） ========== */
 .pagination{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:36px}
@@ -293,10 +272,7 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 
 /* —— 第五段：小手機，進一步壓縮間距與卡片 —— */
 @media(max-width:480px){
-  .hero-card{min-width:280px;max-width:280px}
-  .hero-scroll{gap:12px}
-  .exhibition{margin-top:40px}
-  .filter-bar{padding:12px}
+  .exhibition{margin-top:8px}
   .works.grid{gap:14px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
   .works.dense{gap:10px;grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
   .section-head h2{font-size:16px}
@@ -358,6 +334,10 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <input id="searchInput" placeholder="搜尋作品或作者…">
           </label>
+          <button class="bell-btn" id="bellBtn" aria-label="通知訊息">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+            <span class="dot"></span>
+          </button>
           <div class="member">
             <button class="avatar-btn" id="avatarBtn" aria-label="會員選單">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
@@ -397,40 +377,21 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
         </div>
       </div>
 
-      <!-- 頂部主打展區：橫向捲動挑選（無卷軸，以箭頭控制） -->
-      <section>
-        <div class="section-head">
-          <h2>🔥 本日主推</h2>
-          <div class="hero-ctrl">
-            <button id="heroPrev" aria-label="向左捲">‹</button>
-            <button id="heroNext" aria-label="向右捲">›</button>
-          </div>
-        </div>
-        <div class="hero-scroll" id="heroScroll"></div>
-      </section>
-
       <!-- 篩選展區：最新發布 -->
       <section class="exhibition">
         <div class="section-head">
           <h2>🆕 最新發布</h2>
         </div>
 
-        <!-- 篩選列：左群組＝篩選（排序＋熱門標籤，決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
+        <!-- 篩選列：排序＋標籤 chips（決定「看哪些」）；最右群組＝檢視方式（決定「怎麼看」） -->
         <div class="filter-bar">
-          <!-- 篩選群組 -->
-          <div class="filter-left">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg>
-            <select class="sort" id="sortSelect">
-              <option value="latest">最新上架</option>
-              <option value="rating">最高評分</option>
-              <option value="follows">最多收藏</option>
-            </select>
-            <!-- 熱門標籤開關：點擊在下方展開標籤面板，再點收回；按鈕上顯示目前篩選中的標籤 -->
-            <button class="tag-toggle" id="tagToggle">
-              熱門標籤<span class="cur" id="curTag"></span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
-          </div>
+          <select class="sort" id="sortSelect">
+            <option value="latest">最新上架</option>
+            <option value="rating">最高評分</option>
+            <option value="follows">最多收藏</option>
+          </select>
+          <!-- 標籤列：與篩選列同行常駐顯示 -->
+          <div class="tag-row" id="tagRow"></div>
           <!-- 檢視群組（最右）：三種檢視方式切換 -->
           <div class="view-toggle">
             <button class="view-btn active" data-view="list" title="詳細檢視">
@@ -443,11 +404,6 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
               <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="9.5" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><rect x="16" y="9.5" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><rect x="9.5" y="16" width="5" height="5" rx="1"/><rect x="16" y="16" width="5" height="5" rx="1"/></svg>
             </button>
           </div>
-        </div>
-
-        <!-- 標籤面板：預設收回，展開時向下推出（JS 依資料自動產生標籤） -->
-        <div class="tag-panel" id="tagPanel">
-          <div class="tag-row" id="tagRow"></div>
         </div>
 
         <!-- 作品清單：切換 class 即可改變資訊密度（list / grid / dense） -->
@@ -501,12 +457,12 @@ html{scrollbar-width:thin;scrollbar-color:#3a4763 transparent}
 <script>
 /* ================= 佔位資料：作品清單 ================= */
 const WORKS=[
-  {id:1, title:'星塵劍客',       author:'作者甲', status:'連載中', rating:8.7, follows:15234, added:0,  hue:262, featured:true, tags:['奇幻','冒險'], desc:'背負星屑之劍的少年，踏上尋找失落星座的旅程。'},
-  {id:2, title:'深夜食堂物語',   author:'作者乙', status:'已完結', rating:9.1, follows:22108, added:2,  hue:25,  featured:true, tags:['日常','治癒'], desc:'只在午夜營業的小店，用一道菜接住每個疲憊的靈魂。'},
-  {id:3, title:'代號：青鳥',     author:'作者丙', status:'連載中', rating:8.2, follows:9870,  added:1,  hue:200, featured:true, tags:['科幻','懸疑'], desc:'記憶可以被交易的城市裡，一名信使追查自己的過去。'},
-  {id:4, title:'櫻色約定',       author:'作者丁', status:'連載中', rating:7.9, follows:7650,  added:3,  hue:330, featured:true, tags:['戀愛','校園'], desc:'畢業前的最後一個春天，兩人許下十年後再見的約定。'},
-  {id:5, title:'鋼鐵叢林',       author:'作者戊', status:'休載中', rating:8.9, follows:18900, added:5,  hue:150, featured:true, tags:['科幻','熱血'], desc:'巨構都市的最底層，少年駕駛回收機甲向上攀登。'},
-  {id:6, title:'霧中偵探社',     author:'作者己', status:'連載中', rating:8.4, follows:12300, added:4,  hue:220, featured:true, tags:['懸疑','歷史'], desc:'濃霧籠罩的港都，三人偵探社接下不存在的委託。'},
+  {id:1, title:'星塵劍客',       author:'作者甲', status:'連載中', rating:8.7, follows:15234, added:0,  hue:262,  tags:['奇幻','冒險'], desc:'背負星屑之劍的少年，踏上尋找失落星座的旅程。'},
+  {id:2, title:'深夜食堂物語',   author:'作者乙', status:'已完結', rating:9.1, follows:22108, added:2,  hue:25,   tags:['日常','治癒'], desc:'只在午夜營業的小店，用一道菜接住每個疲憊的靈魂。'},
+  {id:3, title:'代號：青鳥',     author:'作者丙', status:'連載中', rating:8.2, follows:9870,  added:1,  hue:200,  tags:['科幻','懸疑'], desc:'記憶可以被交易的城市裡，一名信使追查自己的過去。'},
+  {id:4, title:'櫻色約定',       author:'作者丁', status:'連載中', rating:7.9, follows:7650,  added:3,  hue:330,  tags:['戀愛','校園'], desc:'畢業前的最後一個春天，兩人許下十年後再見的約定。'},
+  {id:5, title:'鋼鐵叢林',       author:'作者戊', status:'休載中', rating:8.9, follows:18900, added:5,  hue:150,  tags:['科幻','熱血'], desc:'巨構都市的最底層，少年駕駛回收機甲向上攀登。'},
+  {id:6, title:'霧中偵探社',     author:'作者己', status:'連載中', rating:8.4, follows:12300, added:4,  hue:220,  tags:['懸疑','歷史'], desc:'濃霧籠罩的港都，三人偵探社接下不存在的委託。'},
   {id:7, title:'山神與便利商店', author:'作者甲', status:'連載中', rating:8.0, follows:6400,  added:6,  hue:120, tags:['日常','奇幻'], desc:'沒落山神在人間打工，店裡的關東煮意外受歡迎。'},
   {id:8, title:'第七競技場',     author:'作者庚', status:'連載中', rating:7.6, follows:5400,  added:7,  hue:0,   tags:['熱血','冒險'], desc:'敗者失去名字的死鬥擂台，無名選手挑戰七層之巔。'},
   {id:9, title:'圖書館的貓',     author:'作者乙', status:'已完結', rating:9.3, follows:25600, added:9,  hue:45,  tags:['治癒','日常'], desc:'會說話的貓館長，為每本找不到讀者的書尋找歸宿。'},
@@ -527,24 +483,6 @@ let toastTimer;
 function toast(msg){
   const t=$('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
-}
-
-/* ================= 渲染：頂部主打（橫向捲動卡片） ================= */
-function renderHero(){
-  $('heroScroll').innerHTML = WORKS.filter(w=>w.featured).map(w=>`
-    <article class="hero-card" data-title="${w.title}">
-      <div class="hero-cover" style="background:linear-gradient(135deg,hsl(${w.hue},65%,52%),hsl(${w.hue+45},65%,38%))">
-        <span class="hero-badge">主打</span><span>${w.title}</span>
-      </div>
-      <div class="hero-body">
-        <h3>${w.title}</h3>
-        <p>${w.desc}</p>
-        <div class="hero-meta">
-          <span>★ ${w.rating} · ♥ ${fmt(w.follows)}</span>
-          <button class="btn-primary">開始閱讀</button>
-        </div>
-      </div>
-    </article>`).join('');
 }
 
 /* ================= 渲染：熱門標籤（依資料統計數量，產生篩選 chips） ================= */
@@ -574,6 +512,11 @@ function getFiltered(){
 function workCard(w){
   return `<article class="work" data-title="${w.title}">
     <div class="cover" style="background:linear-gradient(135deg,hsl(${w.hue},65%,52%),hsl(${w.hue+45},65%,38%))">${w.title}</div>
+    <div class="work-actions">
+      <button data-act="加入最愛" title="加入最愛">加入最愛</button>
+      <button data-act="稍後觀看" title="稍後觀看">稍後觀看</button>
+      <button data-act="分享社群" title="分享社群">分享社群</button>
+    </div>
     <div class="work-body">
       <h3>${w.title}</h3>
       <div class="meta"><span>${w.author}</span><span>${w.status}</span><span class="star">★ ${w.rating}</span><span>♥ ${fmt(w.follows)}</span></div>
@@ -625,16 +568,9 @@ document.querySelectorAll('.view-btn').forEach(btn=>{
 $('sortSelect').addEventListener('change',e=>{ state.sort=e.target.value; state.page=1; renderWorks(); });
 $('searchInput').addEventListener('input',e=>{ state.query=e.target.value.trim(); state.page=1; renderWorks(); });
 
-/* ================= 互動：篩選群組——熱門標籤面板（展開／收回） ================= */
-$('tagToggle').addEventListener('click',()=>{
-  $('tagPanel').classList.toggle('open');
-  $('tagToggle').classList.toggle('open');
-});
-
-/* ================= 互動：標籤篩選（點 chip 套用，按鈕上同步顯示目前標籤） ================= */
+/* ================= 互動：標籤篩選（點 chip 套用） ================= */
 function setTag(tag){
   state.tag=tag; state.page=1; renderTagRow(); renderWorks();
-  $('curTag').textContent = tag==='全部' ? '' : '#'+tag; // 開關按鈕上顯示目前篩選
   if(tag!=='全部') toast(`已篩選標籤「#${tag}」`);
 }
 $('tagRow').addEventListener('click',e=>{
@@ -658,6 +594,9 @@ document.querySelectorAll('.nav-item,.bn-item[data-page],.sheet-item').forEach(i
     closeSheet(); // 從彈層點選後自動關閉
   });
 });
+
+/* ================= 互動：通知鈴鐺（佔位） ================= */
+$('bellBtn').addEventListener('click',()=>toast('通知訊息為佔位功能'));
 
 /* ================= 互動：會員選單（點人像開關，點外部關閉，項目皆佔位） ================= */
 $('avatarBtn').addEventListener('click',()=>{
@@ -684,18 +623,16 @@ function closeSheet(){ $('sheet').classList.remove('show'); $('sheetBackdrop').c
 $('moreBtn').addEventListener('click',openSheet);
 $('sheetBackdrop').addEventListener('click',closeSheet);
 
-/* ================= 互動：主打區左右捲動箭頭（取代卷軸） ================= */
-$('heroPrev').addEventListener('click',()=>$('heroScroll').scrollBy({left:-360,behavior:'smooth'}));
-$('heroNext').addEventListener('click',()=>$('heroScroll').scrollBy({left: 360,behavior:'smooth'}));
-
-/* ================= 互動：點作品卡片（佔位行為） ================= */
+/* ================= 互動：點作品卡片（佔位行為）與右上角動作按鈕 ================= */
 document.addEventListener('click',e=>{
-  const card=e.target.closest('.work,.hero-card');
+  const act=e.target.closest('.work-actions button');
+  if(act){ toast(`「${act.dataset.act}」為佔位功能`); return; }
+  const card=e.target.closest('.work');
   if(card) toast(`開啟《${card.dataset.title}》詳情頁（佔位）`);
 });
 
 /* ================= 初始化渲染 ================= */
-renderHero(); renderTagRow(); renderWorks();
+renderTagRow(); renderWorks();
 </script>
 </body>
 </html>
